@@ -537,7 +537,6 @@ def monitor_blocks_directory(account):
     global xuni_blocks_count
     global memory_cost
     global running
-    print("Using ",account[2:]," as salt")
     with tqdm(total=None, dynamic_ncols=True, desc=f"{GREEN}Mining{RESET}", unit=f" {GREEN}Blocks{RESET}") as pbar:
         pbar.update(0)
         while True:
