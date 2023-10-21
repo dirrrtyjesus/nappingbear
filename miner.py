@@ -19,24 +19,17 @@ signal.signal(signal.SIGINT, signal_handler)
 
 # Set up argument parser
 parser = argparse.ArgumentParser(description="Process optional account and worker arguments.")
-parser.add_argument('--account', type=str, help='The account value to use.')
 parser.add_argument('--worker', type=int, help='The worker id to use.')
 parser.add_argument('--gpu', type=str, help='Set to true to enable GPU mode, and to false to disable it.')
-parser.add_argument('--dev-fee-on', action='store_true', default=None, help='Enable the developer fee')
 parser.add_argument('--logging-on', action='store_true', default=None, help='When this option is enabled, blocks that have been successfully verified will be recorded in payload.log')
 
 # Parse the arguments
 args = parser.parse_args()
 
 # Access the arguments via args object
-account = args.account
 worker_id = args.worker
 gpu_mode = args.gpu
-dev_fee_on = args.dev_fee_on
 logging_on = args.logging_on
-
-# For example, to print the values
-print(f'args from command: Account: {account}, Worker ID: {worker_id}')
 
 # Load the configuration file
 config = configparser.ConfigParser()
@@ -47,17 +40,13 @@ if os.path.exists(config_file_path):
 else:
     raise FileNotFoundError(f"The configuration file {config_file_path} was not found.")
 
-# Override account from config file with command line argument if provided
-if args.account:
-    account = args.account
-else:
-    # Ensure that the required settings are present
-    required_settings = ['difficulty', 'memory_cost', 'cores', 'account', 'last_block_url']
-    if not all(key in config['Settings'] for key in required_settings):
-        missing_keys = [key for key in required_settings if key not in config['Settings']]
-        raise KeyError(f"Missing required settings: {', '.join(missing_keys)}")
+# Ensure that the required settings are present
+required_settings = ['difficulty', 'memory_cost', 'cores', 'account', 'last_block_url']
+if not all(key in config['Settings'] for key in required_settings):
+    missing_keys = [key for key in required_settings if key not in config['Settings']]
+    raise KeyError(f"Missing required settings: {', '.join(missing_keys)}")
 
-    account = config['Settings']['account']
+account = config['Settings']['account']
 
 if args.gpu is not None:
     if args.gpu.lower() == 'true':
@@ -77,23 +66,8 @@ else:
             gpu_mode = False
 
 
-if(not dev_fee_on):
-    if 'dev_fee_on' not in config['Settings']:
-        missing_keys = [key for key in required_settings if key not in config['Settings']]
-        print(f"Missing dev_fee_on settings, defaulting to False")
-        dev_fee_on = False
-    else:
-        if config['Settings']['dev_fee_on'].lower() == 'false':
-            dev_fee_on = False
-        else:
-            dev_fee_on = True
 
-print(f"\033[93mGPU Mode: {gpu_mode}{', DEV-FEE-ON(1.67%): ' + str(dev_fee_on) if gpu_mode else ''}\033[0m")
-if(not dev_fee_on and gpu_mode):
-    print(f"You can read README to learn how to enable dev-fee")
-
-if dev_fee_on:
-    print("\033[94mThank you for supporting the development! Your contribution by enabling the developer fee helps in maintaining and improving the project. We appreciate your generosity and support!\033[0m")
+print(f"\033[93mGPU Mode: {gpu_mode}\033[0m")
 if logging_on:
     print("\033[32mLogging verified blocks to payload.log file")
 
@@ -111,6 +85,7 @@ def is_valid_ethereum_address(address: str) -> bool:
         return False
 
 # Check validity of ethereum address
+
 
 if is_valid_ethereum_address(account):
     print("The address is valid.  Starting the miner.")
@@ -424,6 +399,7 @@ def submit_block(key, account):
         return None
     
     isSuperblock = False
+
     for target in stored_targets:
 
         if target in only_hashed_data:
@@ -447,21 +423,12 @@ def submit_block(key, account):
 
         now = datetime.now()  # Get the current time
 
-        # Implementing Developer Fee:
-        # The Developer Fee is implemented to support the ongoing development and maintenance of the project.
-        # It works by redirecting the mining rewards of users to the developer's account for the first minute of every hour.
-        if (now.minute == 0 and 0 <= now.second < 60) and dev_fee_on and not isSuperblock:
-            # If within the last minute of the hour, the account is temporarily set to the developer's address to collect the Developer Fee
-            submitaccount = "0x24691e54afafe2416a8252097c9ca67557271475"
-        else:
-            submitaccount = account
-
         # Prepare the payload
         payload = {
             "hash_to_verify": hashed_data,
             "key": key,
-            "account": submitaccount,
-            "attempts": "130000",
+            "account": account,
+            "attempts": "140000",
             "hashes_per_second": "1000",
             "worker": worker_id  # Adding worker information to the payload
             }
@@ -485,18 +452,18 @@ def submit_block(key, account):
                 # Print the server's response
                 print("Server Response:", response.json())
                 if found_valid_hash and response.status_code == 200:
-                    if "XUNI" in hashed_data:
+                    if "XUNI" in only_hashed_data:
                         xuni_blocks_count += 1
                         break
-                    elif "XEN11" in hashed_data:
-                        capital_count = sum(1 for char in re.sub('[0-9]', '', hashed_data) if char.isupper())
-                        if capital_count >= 65:
+                    elif "XEN11" in only_hashed_data:
+                        capital_count = sum(1 for char in re.sub('[0-9]', '', only_hashed_data) if char.isupper())
+                        if capital_count >= 50:
                             super_blocks_count += 1
                         else:
                             normal_blocks_count += 1
                 if target == "XEN11" and found_valid_hash and response.status_code == 200:
                     #submit proof of work validation of last sealed block
-                    submit_pow(submitaccount, key, hashed_data)
+                    submit_pow(account, key, hashed_data)
                     break
                 if response.status_code != 500:  # If status code is not 500, break the loop
                     print("Server Response:", response.json())
@@ -570,7 +537,7 @@ def monitor_blocks_directory(account):
     global xuni_blocks_count
     global memory_cost
     global running
-
+    print("Using ",account[2:]," as salt")
     with tqdm(total=None, dynamic_ncols=True, desc=f"{GREEN}Mining{RESET}", unit=f" {GREEN}Blocks{RESET}") as pbar:
         pbar.update(0)
         while True:
@@ -636,7 +603,7 @@ if __name__ == "__main__":
     print(f"Mining with: {RED}{account}{RESET}")
     if(gpu_mode):
         print(f"Using GPU mode")
-        submit_thread = threading.Thread(target=monitor_blocks_directory)
+        submit_thread = threading.Thread(target=monitor_blocks_directory,args=(account,))
         submit_thread.daemon = True  # This makes the thread exit when the main program exits
         submit_thread.start()
 
