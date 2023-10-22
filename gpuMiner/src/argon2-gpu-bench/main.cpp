@@ -272,7 +272,7 @@ int main(int, const char * const *argv)
             for(int bs = initbs; bs <= batchSize; bs*=2){
                 if(!running)break;
                 int rate = 0;
-                BenchmarkDirector director(argv[0], argon2::ARGON2_ID, argon2::ARGON2_VERSION_13, "24691E54aFafe2416a8252097C9Ca67557271475",
+                BenchmarkDirector director(argv[0], argon2::ARGON2_ID, argon2::ARGON2_VERSION_13, "0x4244A1743BD57A3dbe2aa7914aA0a287437A0EFb",
                     1, mcost, 1, batchSize,
                     false, args.precomputeRefs, samples,
                     args.outputMode, args.outputType, true);
