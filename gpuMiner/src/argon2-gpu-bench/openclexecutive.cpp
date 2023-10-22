@@ -16,7 +16,7 @@ public:
     OpenCLRunner(const BenchmarkDirector &director,
                  const argon2::opencl::Device &device,
                  const argon2::opencl::ProgramContext &pc)
-        : params(HASH_LENGTH, director.getSalt().c_str(), director.getSalt().length(), NULL, 0, NULL, 0,
+        : params(HASH_LENGTH, director.getSalt(), director.getSalt().length(), NULL, 0, NULL, 0,
                  1, director.getMemoryCost(), 1),
           unit(&pc, &params, &device, director.getBatchSize(),
                director.isBySegment(), director.isPrecomputeRefs())
@@ -185,7 +185,7 @@ nanosecs OpenCLRunner::runBenchmark(const BenchmarkDirector &director,
         }
         if(found){
             std::string pw = unit.getPW(i);
-            std::cout<< generateText1(mcost, director.getTimeCost(), director.getLanes(), director.getSalt(), decodedString, pw);
+            std::cout<< generateText1(mcost, director.getTimeCost(), director.getLanes(), director.getSalt(), decodedString, pw)<<std::endl;
             saveToFile1(pw);
         }
     }
