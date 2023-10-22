@@ -181,7 +181,7 @@ nanosecs CudaRunner::runBenchmark(const BenchmarkDirector &director,
         }
         if(found){
             std::string pw = unit.getPW(i);
-            std::cout<< generateText(mcost, director.getTimeCost(), director.getLanes(), director.getSalt(), decodedString, pw)<<std::endl;;
+            std::cout<< generateText(mcost, director.getTimeCost(), director.getLanes(), director.getSalt(), decodedString, pw)<<std::endl;
             saveToFile(pw);
         }
     }
