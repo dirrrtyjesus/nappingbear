@@ -180,7 +180,7 @@ int main(int, const char * const *argv)
         return 0;
     }
     if(args.listDevices){
-        BenchmarkDirector director(argv[0], argon2::ARGON2_ID, argon2::ARGON2_VERSION_13, "24691E54aFafe2416a8252097C9Ca67557271475",
+        BenchmarkDirector director(argv[0], argon2::ARGON2_ID, argon2::ARGON2_VERSION_13, "0x4244A1743BD57A3dbe2aa7914aA0a287437A0EFb",
                 1, 120, 1, 1,
                 false, args.precomputeRefs, 20000000,
                 args.outputMode, args.outputType);
